@@ -27,7 +27,7 @@ Run `composer install` to install the dependencies.
 
 ## Contribution
 
-We appreciate feedback and contribution to this plugin! Before you get started, please see the contribution guidelines.
+We appreciate feedback and contribution to this plugin! Before you get started, please see the CONTRIBUTING.md file for more details.
 
 ## Support
 
