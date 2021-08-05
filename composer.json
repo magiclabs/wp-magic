@@ -1,0 +1,37 @@
+{
+  "name": "magiclabs/wp-magic",
+  "description": "WordPress Plugin for Magic",
+  "homepage": "https://github.com/magiclabs/wp-magic",
+  "license": "MIT",
+  "type": "wordpress-plugin",
+  "keywords": [
+    "wordpress",
+    "wp",
+    "passwordless",
+    "authentication",
+    "auth",
+    "magic",
+    "magiclink",
+    "magiclabs"
+  ],
+  "authors": [
+    {
+      "name": "Magic",
+      "email": "hello@magic.link",
+      "homepage": "https://magic.link"
+    }
+  ],
+  "support": {
+    "source": "https://github.com/magiclabs/wp-magic",
+    "issues": "https://github.com/magiclabs/wp-magic/issues",
+    "docs": "https://magic.link/docs",
+    "discord": "https://discord.gg/magiclabs"
+  },
+  "require": {
+    "magiclabs/magic-admin-php": "dev-master"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "~9.4.3",
+    "10up/wp_mock": "^0.4.2"
+  }
+}

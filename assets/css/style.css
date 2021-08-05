@@ -1,0 +1,52 @@
+.loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    background-color: rgba(255 255 255 / 0.8);
+    background-image: url('../img/magic_loader.gif');
+    background-size: 100px;
+    background-position: center 200px;
+    background-repeat: no-repeat;
+}
+
+#magic {
+    width: 320px;
+    margin: auto;
+}
+
+.magic-form button{
+    margin: 3rem 0 3rem 0;
+}
+
+.login .magic-form button{
+    margin: 15px 0;
+    float: right;
+    min-height: 32px;
+    line-height: 2.30769231;
+    padding: 0 12px;
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+    text-decoration: none;
+    text-shadow: none;
+    border-width: 1px;
+    border-style: solid;
+    -webkit-appearance: none;
+    border-radius: 3px;
+}
+
+
+.login .magic-form input{
+    width: 100%;
+    min-height: 40px;
+}
+
+.magic-title{
+    text-align: center;
+}
+
