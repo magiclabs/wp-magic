@@ -33,5 +33,8 @@
   "require-dev": {
     "phpunit/phpunit": "~9.4.3",
     "10up/wp_mock": "^0.4.2"
+  },
+  "scripts": {
+    "test": "phpunit"
   }
 }

@@ -34,19 +34,18 @@ class LoginTest extends TestCase
             'args' => [Functions::type('string')],
             'return' => $this->options['magic_option_name']
         ]);
+//
+//        WP_Mock::userFunction('add_shortcode', [
+//            'args' => [Functions::type('string'), Functions::type('array')]
+//        ]);
 
-        WP_Mock::userFunction('add_shortcode', [
-            'args' => [Functions::type('string'), Functions::type('array')]
-        ]);
+        WP_Mock::userFunction('login_header');
 
         WP_Mock::userFunction('do_shortcode', [
             'args' => [Functions::type('string')],
             'return' => 'shortcode result'
         ]);
 
-        WP_Mock::userFunction('site_url', [
-            'return' => '/'
-        ]);
 
         WP_Mock::userFunction('get_rest_url', [
             'return' => '/'
@@ -55,33 +54,34 @@ class LoginTest extends TestCase
         WP_Mock::userFunction('add_query_arg', [
             'return_arg' => 1
         ]);
+//
+//        $wp_user = $this->getMockBuilder(WP_User::class)->getMock();
+//        $wp_user->user_login = 'test';
+//        $data = new stdClass();
+//        $data->ID = '10';
+//        $wp_user->data = $data;
+//
+//        WP_Mock::userFunction('get_user_by', [
+//            'args' => [Functions::type('string'), '*'],
+//            'return' => $wp_user
+//        ]);
+//
+//        WP_Mock::userFunction('check_password_reset_key', [
+//            'args' => ['*', '*'],
+//            'return' => $wp_user
+//        ]);
+//
+//        WP_Mock::userFunction('is_wp_error', [
+//            'args' => ['*'],
+//            'return' => false
+//        ]);
+//
+//        WP_Mock::userFunction('wp_set_auth_cookie', [
+//            'args' => ['*', '*', '*']
+//        ]);
 
-        $wp_user = $this->getMockBuilder(WP_User::class)->getMock();
-        $wp_user->user_login = 'test';
-        $data = new stdClass();
-        $data->ID = '10';
-        $wp_user->data = $data;
-
-        WP_Mock::userFunction('get_user_by', [
-            'args' => [Functions::type('string'), '*'],
-            'return' => $wp_user
-        ]);
-
-        WP_Mock::userFunction('check_password_reset_key', [
-            'args' => ['*', '*'],
-            'return' => $wp_user
-        ]);
-
-        WP_Mock::userFunction('is_wp_error', [
-            'args' => ['*'],
-            'return' => false
-        ]);
-
-        WP_Mock::userFunction('wp_set_auth_cookie', [
-            'args' => ['*', '*', '*']
-        ]);
-
-        WP_Mock::userFunction('wp_unslash');
+        WP_Mock::passthruFunction('site_url');
+        WP_Mock::passthruFunction('wp_unslash');
     }
 
     public function tearDown(): void
@@ -89,30 +89,61 @@ class LoginTest extends TestCase
         parent::tearDown();
     }
 
+    public function test_Magic_Login__construct()
+    {
+        WP_Mock::userFunction('add_shortcode', [
+            'times' => '1+'
+        ]);
+
+        $prop_names = ['path', 'url', 'secret_key', 'redirect_url', 'user_role'];
+
+        $ml = new Magic_Login();
+
+        $reflection = new ReflectionClass(Magic_Login::class);
+        foreach ($prop_names as $prop_name) {
+            $reflection_property = $reflection->getProperty($prop_name);
+            $reflection_property->setAccessible(true);
+            $this->assertNotNull($reflection_property->getValue($ml), 'не установленна переменная ' . $prop_name);
+        }
+    }
+
     /**
      * @dataProvider pageNowProvider
      */
-    public function test_magic_wp_login($page_now, $output_expected): void
+    public function test_magic_wp_login($page_now, $is_user_logged_in, $output_expected): void
     {
         $GLOBALS['pagenow'] = $page_now;
 
-        $ml = new Magic_Login();
+        WP_Mock::userFunction('is_user_logged_in', [
+            'return' => $is_user_logged_in,
+        ]);
+
+        $ml = $this->getMockBuilder(Magic_Login::class)
+            ->onlyMethods(['exit'])
+            ->getMock();
+
+        if ($output_expected) {
+            $ml->expects($this->once())
+                ->method('exit');
+        }
 
         $this->expectOutputRegex('/.*/');
         $ml->magic_wp_login();
         $output = $this->getActualOutput();
         if ($output_expected) {
-            $this->assertNotEmpty($output);
+            $this->assertNotEmpty($output, 'The login form was not displayed');
         } else {
-            $this->assertEmpty($output);
+            $this->assertEmpty($output, 'The login form was displayed incorrectly');
         }
     }
 
     public function pageNowProvider(): array
     {
         return [
-            ['wp-login.php', true],
-            ['', false]
+            ['wp-login.php', true, false],
+            ['wp-login.php', false, true],
+            ['post.php', true, false],
+            ['post.php', false, false],
         ];
     }
 
@@ -140,49 +171,98 @@ class LoginTest extends TestCase
         ];
     }
 
-    public function test_authorize_user()
+    /**
+     * @dataProvider authorizeUserProvider
+     */
+    public function test_authorize_user($key, $email, $is_user_exist, $is_key_valid, $is_ok)
     {
         global $_GET;
-        $_GET['key'] = 'key';
-        $_GET['email'] = 'test@test.test';
+        $_GET['key'] = $key;
+        $_GET['email'] = $email;
 
-        WP_Mock::userFunction('wp_redirect',
-            [
-                'times' => 1,
-                'args' => [Functions::type('string')],
-                'return' => true
-            ]
-        );
-        WP_Mock::userFunction('wp_die',
-            [
-                'times' => 1
-            ]
-        );
+        $wp_error = $this->getMockBuilder(WP_Error::class)->getMock();
+        $wp_error->get_error_message = function ($code = '') {
+            return 'Test error message.';
+        };
 
-        $ml = new Magic_Login();
-        $ml->authorize_user();
-    }
+        if ($is_user_exist) {
+            $wp_user = $this->getMockBuilder(WP_User::class)->getMock();
+            $wp_user->user_login = 'test_login';
+            $data = new stdClass();
+            $data->ID = '10';
+            $wp_user->data = $data;
+        } else {
+            $wp_user = false;
+        }
 
-    public function test_no_authorize_user()
-    {
-        unset($_GET['key'], $_GET['email']);
-        WP_Mock::userFunction('wp_redirect',
-            [
-                'times' => 0,
-                'args' => [Functions::type('string')],
-                'return' => true
-            ]
-        );
-        WP_Mock::userFunction('wp_die',
-            [
-                'times' => 0
-            ]
-        );
+        WP_Mock::userFunction('get_user_by', [
+            'return' => $wp_user
+        ]);
+
+        WP_Mock::userFunction('check_password_reset_key', [
+            'args' => [$key, 'test_login'],
+            'return' => $is_key_valid ? $wp_user : $wp_error,
+        ]);
+
+        WP_Mock::userFunction('check_password_reset_key', [
+            'args' => ['*', '*'],
+            'return' => $wp_error,
+        ]);
+
+        WP_Mock::userFunction('is_wp_error', [
+            'args' => [$wp_error],
+            'return' => true,
+        ]);
+
+        WP_Mock::userFunction('is_wp_error', [
+            'args' => ['*'],
+            'return' => false,
+        ]);
+
+        WP_Mock::userFunction('wp_set_auth_cookie', [
+            'times' => $is_ok ? 1 : 0
+        ]);
+
+        WP_Mock::userFunction('wp_redirect', [
+            'times' => $is_ok ? 1 : 0,
+            'args' => [Functions::type('string')],
+            'return' => true
+        ]);
+
+        $ml = $this->getMockBuilder(Magic_Login::class)
+            ->onlyMethods(['exit'])
+            ->getMock();
+
+        if ($is_ok) {
+            $ml->expects($this->once())
+                ->method('exit');
+        }
 
         $this->expectOutputRegex('/.*/');
 
-        $ml = new Magic_Login();
         $ml->authorize_user();
+
+        unset($_GET['key'], $_GET['email']);
+    }
+
+    public function authorizeUserProvider(): array
+    {
+        return [
+            ['key', 'test@test.test', true, true, true],
+            ['key', 'test@test.test', true, false, false],
+            ['key', 'test@test.test', false, true, false],
+            ['key', 'test@test.test', false, false, false],
+
+            [null, 'test@test.test', true, true, false],
+            [null, 'test@test.test', true, false, false],
+            [null, 'test@test.test', false, true, false],
+            [null, 'test@test.test', false, false, false],
+
+            ['key', null, true, true, false],
+            ['key', null, true, false, false],
+            ['key', null, false, true, false],
+            ['key', null, false, false, false],
+        ];
     }
 
     public function test_register_routes()
@@ -199,8 +279,47 @@ class LoginTest extends TestCase
         $ml->register_routes();
     }
 
-    public function test_get_auth_link()
+    /**
+     * @dataProvider authLinkProvider
+     */
+    public function test_get_auth_link($is_user_exist, $create_user_successfully)
     {
+        $wp_error = $this->getMockBuilder(WP_Error::class)->getMock();
+        $wp_error->get_error_message = function ($code = '') {
+            return 'Test error message.';
+        };
+
+        $wp_user = $this->getMockBuilder(WP_User::class)->getMock();
+        $wp_user->user_login = 'test_login';
+        $data = new stdClass();
+        $data->ID = '10';
+        $wp_user->data = $data;
+
+
+        WP_Mock::userFunction('get_user_by', [
+            'args' => ['email', '*'],
+            'return' => $is_user_exist ? $wp_user : false
+        ]);
+        WP_Mock::userFunction('get_user_by', [
+            'return' => $wp_user
+        ]);
+
+        WP_Mock::userFunction('wp_create_user', [
+            'return' => $create_user_successfully ? $wp_user : $wp_error
+        ]);
+
+        WP_Mock::userFunction('wp_generate_password', [
+            'return' => 'too_hard_pass_1'
+        ]);
+        WP_Mock::userFunction('is_wp_error', [
+            'args' => [$wp_error],
+            'return' => true,
+        ]);
+        WP_Mock::userFunction('is_wp_error', [
+            'args' => ['*'],
+            'return' => false,
+        ]);
+
         $ml = $this->getMockBuilder(Magic_Login::class)
             ->onlyMethods(['get_login_url'])
             ->getMock();
@@ -214,9 +333,22 @@ class LoginTest extends TestCase
 
         $reflection_property->setValue($ml, 't@t.test');
 
-//        $ml = new Magic_Login();
         $res = $ml->get_auth_link();
-        $this->assertIsString($res);
+        if ($is_user_exist || $create_user_successfully) {
+            $this->assertIsString($res);
+        } else {
+            $this->assertFalse($res);
+        }
+    }
+
+    public function authLinkProvider()
+    {
+        return [
+            [true, true],
+            [true, false],
+            [false, true],
+            [false, false],
+        ];
     }
 
     public function test_get_login_url()
@@ -271,26 +403,18 @@ class LoginTest extends TestCase
 
     public function test_add_login_scripts()
     {
-        WP_Mock::userFunction('wp_register_script',
-            [
-                'times' => '1+'
-            ]
-        );
-        WP_Mock::userFunction('wp_enqueue_script',
-            [
-                'times' => '1+'
-            ]
-        );
-        WP_Mock::userFunction('wp_enqueue_style',
-            [
-                'times' => '1+'
-            ]
-        );
-        WP_Mock::userFunction('wp_localize_script',
-            [
-                'times' => '1+'
-            ]
-        );
+        WP_Mock::userFunction('wp_register_script', [
+            'times' => '1+'
+        ]);
+        WP_Mock::userFunction('wp_enqueue_script', [
+            'times' => '1+'
+        ]);
+        WP_Mock::userFunction('wp_enqueue_style', [
+            'times' => '1+'
+        ]);
+        WP_Mock::userFunction('wp_localize_script', [
+            'times' => '1+'
+        ]);
 
         $ml = new Magic_Login();
         $ml->add_login_scripts();

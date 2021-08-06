@@ -24,6 +24,7 @@ Note: Make sure your admin user in WordPress has an email address that matches a
 ## Development
 Install WordPress and move the plugin to the `wp-content/plugins` directory.
 Run `composer install` to install the dependencies.
+Run `composer test` to run the tests.
 
 ## Contribution
 

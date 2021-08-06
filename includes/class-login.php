@@ -83,9 +83,9 @@ class Magic_Login
     public function magic_wp_login()
     {
         if ( $GLOBALS['pagenow'] === 'wp-login.php' && !is_user_logged_in() ) { // If page is wp-login run Magic form shortcode
-	        login_header( '');
+	        login_header('');
             echo do_shortcode('[magic_login]');
-            exit;
+            $this->exit();
         }
     }
 
@@ -129,10 +129,10 @@ class Magic_Login
                 wp_set_auth_cookie( $check->data->ID, true, true ); // Set auth cookie
 
                 wp_redirect( site_url($this->redirect_url) ); // Redirect
-                exit;
+                $this->exit();
             } else {
                 echo 'You auth link is expired or incorrect, please try again.';
-	            exit;
+	            $this->exit();
             }
         }
     }
@@ -345,6 +345,18 @@ class Magic_Login
         }
 
         return $html;
+    }
+
+    /**
+     * Terminates execution of the script
+     *
+     * Use this method to die scripts!
+     *
+     * @param string $message
+     */
+    protected function exit()
+    {
+        exit;
     }
 }
 
