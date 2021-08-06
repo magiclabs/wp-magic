@@ -1,5 +1,7 @@
 # Login by Magic
 
+![Login by Magic](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/v3rqddyj4kfs151vel03.png)
+
 This plugin replaces the standard WordPress login form with one powered by Magic that enables passwordless email magic link login. Please see the https://magic.link/docs for more details on functionality.
 
 Login by Magic plugin also supports the WooCommerce login.
