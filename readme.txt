@@ -1,11 +1,12 @@
 === Login by Magic ===
-Contributors: magiclabs
 Tags: passwordless, magiclink, emailmagiclink, authentication, security, magic
 Requires at least: 5.5.1
 Tested up to: 5.8
 Requires PHP: 7.3
 License: GPL-3.0-only
 License URI: https://opensource.org/licenses/GPL-3.0
+Stable tag: 1.0.0
+Contributors: magiclabs
 
 Login by Magic plugin replaces the standard WordPress login form with one powered by Magic that enables passwordless email magic link login.
 

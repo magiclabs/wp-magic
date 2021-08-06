@@ -6,7 +6,7 @@
  * @category   Class
  * @package    Magic
  * @subpackage WordPress
- * @author     Magic <hello@magic.link>
+ * @author     Magic <support@magic.link>
  * @license    https://opensource.org/licenses/GPL-3.0 GPL-3.0-only
  * @link
  * @since      0.0.0
