@@ -92,7 +92,7 @@ class Magic_Admin
 
         add_settings_field(
             'publishable_key', // id
-            'Publishable Key', // title
+            'Publishable API Key', // title
             array($this, 'publishable_key_callback'), // callback
             'magic-admin', // page
             'magic_setting_section' // section
@@ -225,7 +225,7 @@ class Magic_Admin
     {
         printf(
             '<input class="regular-text" type="text" name="magic_option_name[redirect_uri]" id="redirect_uri" value="%s">
-            <p class="description">' . esc_html__('Redirect user on this page after authorization. (Optional)', 'magic') . '</p>',
+            <p class="description">' . esc_html__('Redirect user to this page after successful authentication. (Optional)', 'magic') . '</p>',
             isset($this->magic_options['redirect_uri']) ? esc_attr($this->magic_options['redirect_uri']) : ''
         );
     }
