@@ -162,7 +162,7 @@ class Magic_Login
      * Return log-in link, if user not exist - create new user
      * Fired by `rest_api_init` action hook.
      * @return string
-     * @todo fix signature
+     * @return string|false
      *
      * @since 0.0.0
      * @access public
@@ -180,7 +180,7 @@ class Magic_Login
                 $result = wp_create_user($name, wp_generate_password(), $this->user_email);  // Create wp user
                 if(is_wp_error($result)){ // If get error to create the user - log message
                     $error = $result->get_error_message();
-                    error_log( $error );
+                    $this->log( $error );
                 }else{ // If user was successfully created - receive and return login url
 	                $user_id_role = new WP_User($result);
 	                $user_id_role->set_role($this->user_role);
@@ -230,8 +230,15 @@ class Magic_Login
     public function validate_token()
     {
         $headers = apache_request_headers();
-        if(!empty($headers['Authorization'])){ // Check exist authorization field in header
-            $did_token = \MagicAdmin\Util\Http::parse_authorization_header_value($headers['Authorization']);
+
+        if(!empty($headers['Authorization'])){
+        	$token = $headers['Authorization'];
+        }elseif (!empty($headers['authorization'])){
+	        $token = $headers['authorization'];
+        }
+
+        if(!empty($token)){ // Check exist authorization field in header
+            $did_token = \MagicAdmin\Util\Http::parse_authorization_header_value($token);
 
             // Deny access if token not exist
             if ($did_token == null) {
@@ -253,15 +260,15 @@ class Magic_Login
                     }
                 }
             } catch (\MagicAdmin\Exception\DIDTokenException $e) {
-                error_log( print_r($e->getMessage(), true) );
+                $this->log( $e->getMessage() );
                 return false;
             } catch (\MagicAdmin\Exception\RequestException $e) {
-                error_log( print_r($e->getMessage(), true) );
+                $this->log( $e->getMessage() );
                 return false;
             }
         }else{
-	        error_log( 'Failed to receive authorization header' );
-	        error_log( print_r($headers, true) );
+	        $this->log( 'Failed to receive authorization header' );
+	        $this->log( $headers );
 	        return false;
         }
     }
@@ -357,6 +364,19 @@ class Magic_Login
     protected function exit()
     {
         exit;
+    }
+
+    /**
+     * Logging
+     *
+     * @param $message
+     */
+    protected function log($message): void
+    {
+        if (!is_string($message)) {
+            $message = print_r($message, true);
+        }
+        error_log($message);
     }
 }
 
