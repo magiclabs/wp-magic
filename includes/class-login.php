@@ -305,7 +305,7 @@ class Magic_Login
     public function add_login_scripts()
     {
         // Load Magic SDK.
-        wp_register_script('magic-sdk', 'https://cdn.jsdelivr.net/npm/magic-sdk@latest/dist/magic.js', array(), 'latest', true);
+        wp_register_script('magic-sdk', $this->url . 'assets/libs/magic.js', array(), 'latest', true);
         wp_enqueue_script('magic-sdk');
 
         // Load Magic for WordPress Scripts.
