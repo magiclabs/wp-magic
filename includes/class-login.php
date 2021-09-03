@@ -27,6 +27,8 @@ class Magic_Login
 
     private $user_email;
 
+    private $token_error = null;
+
     /**
      * Constructor
      *
@@ -68,7 +70,96 @@ class Magic_Login
 
             // Catch GET request for authorize user
             add_action( 'init', array( $this, 'authorize_user' ), 10 );
+
+            // Check auth by token in REST request
+            add_filter( 'determine_current_user', array( $this, 'determine_current_user' ), 10 );
+
+            // Return REST token auth errors
+            add_filter( 'rest_pre_dispatch', array( $this, 'rest_pre_dispatch' ), 10, 2 );
         }
+    }
+
+    /**
+     * This is our Middleware to try to authenticate the user according to the
+     * token send.
+     *
+     * @param (int|bool) $user Logged User ID
+     *
+     * @return (int|bool)
+     */
+    public function determine_current_user($user)
+    {
+        /**
+         * This hook only should run on the REST API requests to determine
+         * if the user in the Token (if any) is valid, for any other
+         * normal call ex. wp-admin/.* return the user.
+         *
+         * @since 1.2.3
+         **/
+        $rest_api_slug = rest_get_url_prefix();
+        $valid_api_uri = strpos($_SERVER['REQUEST_URI'], $rest_api_slug);
+        if (!$valid_api_uri) {
+            return $user;
+        }
+
+        /*
+         * if the request URI is for validate the token don't do anything,
+         * this avoid double calls to the validate_token function and close auth by email.
+         */
+        $validate_uri = strpos($_SERVER['REQUEST_URI'], 'auth');
+        if ($validate_uri > 0) {
+            return $user;
+        }
+
+        if(!$this->getHeadersAuthorization()){ # Check exist header authorization value
+            $this->token_error = new WP_Error(
+                'magic_header_token_missing',
+                __('Magic authorization token is missing', 'magic'),
+                array(
+                    'status' => 401,
+                )
+            );
+        }
+
+        $token = $this->validate_token(); # Call token validation
+        if($token){
+            if( ( $user_data = get_user_by( 'email', $this->user_email ) ) ) { # Get existing user
+                return $user_data->data->ID;
+            }else{
+                $this->token_error = new WP_Error(
+                    'magic_user_not_found',
+                    __('Magic user not found', 'magic'),
+                    array(
+                        'status' => 403,
+                    )
+                );
+            }
+        }else{
+            $this->token_error = new WP_Error(
+                'magic_invalid_token',
+                __('Magic token is invalid', 'magic'),
+                array(
+                    'status' => 401,
+                )
+            );
+        }
+
+        /** Auth have the errors*/
+        return $user;
+    }
+
+    /**
+     * Filter to hook the rest_pre_dispatch, if the is an error in the request
+     * send it, if there is no error just continue with the current request.
+     *
+     * @param $request
+     */
+    public function rest_pre_dispatch($request)
+    {
+        if (is_wp_error($this->token_error)) {
+            return $this->token_error;
+        }
+        return $request;
     }
 
     /**
@@ -218,6 +309,28 @@ class Magic_Login
     }
 
     /**
+     * Take authorization token
+     *
+     * Receive authorization token from header and return
+     * @return (string|bool)
+     *
+     * @since 0.0.0
+     * @access public
+     */
+    public function getHeadersAuthorization()
+    {
+        $headers = apache_request_headers();
+
+        if(!empty($headers['Authorization'])){
+            return $headers['Authorization'];
+        }elseif (!empty($headers['authorization'])){
+            return $headers['authorization'];
+        }
+
+        return false;
+    }
+
+    /**
      * Validate did token
      *
      * Check did token and define user email for REST API access
@@ -229,15 +342,8 @@ class Magic_Login
      */
     public function validate_token()
     {
-        $headers = apache_request_headers();
-
-        if(!empty($headers['Authorization'])){
-        	$token = $headers['Authorization'];
-        }elseif (!empty($headers['authorization'])){
-	        $token = $headers['authorization'];
-        }
-
-        if(!empty($token)){ // Check exist authorization field in header
+        $token = $this->getHeadersAuthorization();
+        if($token){ // Check exist authorization field in header
             $did_token = \MagicAdmin\Util\Http::parse_authorization_header_value($token);
 
             // Deny access if token not exist
@@ -268,7 +374,7 @@ class Magic_Login
             }
         }else{
 	        $this->log( 'Failed to receive authorization header' );
-	        $this->log( $headers );
+	        $this->log( print_r(apache_request_headers(), true) );
 	        return false;
         }
     }
