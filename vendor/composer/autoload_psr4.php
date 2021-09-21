@@ -6,10 +6,18 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'phpDocumentor\\Reflection\\' => array($vendorDir . '/phpdocumentor/reflection-common/src', $vendorDir . '/phpdocumentor/type-resolver/src', $vendorDir . '/phpdocumentor/reflection-docblock/src'),
     'kornrunner\\' => array($vendorDir . '/kornrunner/keccak/src'),
+    'Webmozart\\Assert\\' => array($vendorDir . '/webmozart/assert/src'),
+    'WP_Mock\\' => array($vendorDir . '/10up/wp_mock/php/WP_Mock'),
     'Symfony\\Polyfill\\Mbstring\\' => array($vendorDir . '/symfony/polyfill-mbstring'),
+    'Symfony\\Polyfill\\Ctype\\' => array($vendorDir . '/symfony/polyfill-ctype'),
+    'Prophecy\\' => array($vendorDir . '/phpspec/prophecy/src/Prophecy'),
+    'PhpParser\\' => array($vendorDir . '/nikic/php-parser/lib/PhpParser'),
     'MagicAdmin\\' => array($vendorDir . '/magiclabs/magic-admin-php/lib'),
     'Elliptic\\' => array($vendorDir . '/simplito/elliptic-php/lib'),
+    'Doctrine\\Instantiator\\' => array($vendorDir . '/doctrine/instantiator/src/Doctrine/Instantiator'),
+    'DeepCopy\\' => array($vendorDir . '/myclabs/deep-copy/src/DeepCopy'),
     'BN\\' => array($vendorDir . '/simplito/bn-php/lib'),
     'BI\\' => array($vendorDir . '/simplito/bigint-wrapper-php/lib'),
 );
