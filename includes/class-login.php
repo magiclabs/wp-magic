@@ -316,8 +316,13 @@ class Magic_Login
         wp_enqueue_style('magic-link-plugin', $this->url . 'assets/css/style.css', array());
 
         $magic_options = get_option('magic_option_name');
-        $magic_options['api_uri'] = get_rest_url();
-        wp_localize_script('magic-sdk', 'magic_wp', $magic_options);
+
+        // Specify which props are needed on the client side
+        wp_localize_script('magic-sdk', 'magic_wp', [
+            'publishable_key' => $magic_options['publishable_key'],
+            'redirect_uri' => $magic_options['redirect_uri'],
+            'api_uri' => get_rest_url(),
+        ]);
     }
 
     /**
