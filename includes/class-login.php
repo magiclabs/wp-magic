@@ -246,6 +246,7 @@ class Magic_Login
             }
 
             $magic = new \MagicAdmin\Magic($this->secret_key);
+            $magic->_set_platform('wordpress');
 
             // Validate the did_token.
             try {
