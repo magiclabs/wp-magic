@@ -4,7 +4,7 @@
  * Plugin Name: Login by Magic
  * Plugin URI: https://github.com/magiclabs/wp-magic
  * Description: Login by Magic provides passwordless login for your WordPress site.
- * Version:     1.0.0
+ * Version:     1.0.5
  * Author:      Magic
  * Author URI:  https://magic.link/
  * Text Domain: wp-magic
@@ -27,10 +27,10 @@ class Magic_Link
     /**
      * Plugin Version
      *
-     * @since 1.0.0
+     * @since 1.0.5
      * @var string The plugin version.
      */
-    const VERSION = '1.0.0';
+    const VERSION = '1.0.5';
 
     /**
      * Minimum PHP Version
